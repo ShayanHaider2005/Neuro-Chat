@@ -65,28 +65,28 @@ This is closer to how **real backend servers** are built.
 - messages
 - Useful for debugging and monitoring
 
-### ⏱️ Rate Limiting
+### Rate Limiting
 - Prevents spam
 - Slows down or blocks excessive requests
 
 
-## 🖥️ System Architecture
-Client (GUI / Terminal)
+## System Architecture
+- Client (GUI / Terminal)
 ↓
-TCP Socket Layer
+- TCP Socket Layer
 ↓
-Thread Pool (Worker Threads)
+- Thread Pool (Worker Threads)
 ↓
-Shared Message Buffer (Mutex Protected)
+- Shared Message Buffer (Mutex Protected)
 ↓
-Routing Logic (Rooms / Private Messages)
+- Routing Logic (Rooms / Private Messages)
 ↓
-Broadcast / Direct Delivery
+- Broadcast / Direct Delivery
 
 
 ---
 
-## 🧪 OS Concepts Demonstrated
+## OS Concepts Demonstrated
 
 This isn’t just a chat app — it’s a **live OS lab**:
 
@@ -98,7 +98,7 @@ This isn’t just a chat app — it’s a **live OS lab**:
 
 ---
 
-## 🖼️ GUI + Live OS Monitor
+## GUI + Live OS Monitor
 
 A unique part of this project:
 
@@ -107,8 +107,7 @@ A unique part of this project:
   - Active threads
   - Mutex lock state
   - Semaphore usage  
-
-👉 Makes invisible OS concepts **visually understandable**
+ Makes invisible OS concepts **visually understandable**
 
 ---
 
@@ -127,9 +126,7 @@ A unique part of this project:
 ## 🚀 Getting Started
 
 ### 1. Clone Repository
-    ```bash
-   git clone https://github.com/your-username/neurochat.git
-   cd neurochat
+    ```bash git clone https://github.com/your-username/neurochat.git cd neurochat
 ### 2. Build
     ```bash
     make
