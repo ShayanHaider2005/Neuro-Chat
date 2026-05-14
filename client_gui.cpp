@@ -18,12 +18,61 @@ GtkTextBuffer *buffer;
 GtkWidget *message_entry;
 GtkWidget *thread_label;
 GtkWidget *mutex_label;
+GtkWidget *semaphore_label;
+GtkWidget *activity_label;
 
 void update_chat(const char* text) {
     GtkTextIter iter;
     gtk_text_buffer_get_end_iter(buffer, &iter);
     gtk_text_buffer_insert(buffer, &iter, text, -1);
     gtk_text_buffer_insert(buffer, &iter, "\n", -1);
+}
+
+string extract_field(const string &payload, const string &field) {
+    string key = field + "=";
+    size_t start = payload.find(key);
+    if (start == string::npos) {
+        return "";
+    }
+
+    start += key.length();
+    size_t end = payload.find('|', start);
+    return payload.substr(start, end == string::npos ? string::npos : end - start);
+}
+
+gboolean append_chat_idle(gpointer data) {
+    char *text = static_cast<char*>(data);
+    update_chat(text);
+    g_free(text);
+    return G_SOURCE_REMOVE;
+}
+
+gboolean update_monitor_idle(gpointer data) {
+    char *payload_data = static_cast<char*>(data);
+    string payload(payload_data);
+    g_free(payload_data);
+
+    string reason = extract_field(payload, "reason");
+    string workers = extract_field(payload, "workers");
+    string connections = extract_field(payload, "connections");
+    string slots = extract_field(payload, "slots");
+    string messages = extract_field(payload, "messages");
+    string mutex_state = extract_field(payload, "mutex");
+
+    if (!workers.empty()) {
+        gtk_label_set_text(GTK_LABEL(thread_label), ("Thread Pool Workers: " + workers + " active").c_str());
+    }
+    if (!mutex_state.empty()) {
+        gtk_label_set_text(GTK_LABEL(mutex_label), ("Mutex: [ " + mutex_state + " ]").c_str());
+    }
+    if (!slots.empty() && !connections.empty()) {
+        gtk_label_set_text(GTK_LABEL(semaphore_label), ("Semaphore Slots: " + slots + " free / " + connections + " active").c_str());
+    }
+    if (!reason.empty()) {
+        gtk_label_set_text(GTK_LABEL(activity_label), ("Last Event: " + reason + " | Messages: " + messages).c_str());
+    }
+
+    return G_SOURCE_REMOVE;
 }
 
 void* receiver(void* arg) {
@@ -33,7 +82,11 @@ void* receiver(void* arg) {
         int len = read(sock, server_reply, 2048);
         if (len <= 0) break;
         
-        g_idle_add((GSourceFunc)update_chat, g_strdup(server_reply));
+        if (strncmp(server_reply, "__MONITOR__|", 12) == 0) {
+            g_idle_add(update_monitor_idle, g_strdup(server_reply));
+        } else {
+            g_idle_add(append_chat_idle, g_strdup(server_reply));
+        }
     }
     return NULL;
 }
@@ -54,6 +107,35 @@ int main(int argc, char *argv[]) {
     inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr);
 
     if (connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) return -1;
+
+    char buffer_in[1024];
+    memset(buffer_in, 0, 1024);
+    read(sock, buffer_in, 1024);
+    cout << buffer_in;
+    string mode;
+    getline(cin, mode);
+    send(sock, mode.c_str(), mode.length(), 0);
+
+    for (int i = 0; i < 2; i++) {
+        memset(buffer_in, 0, 1024);
+        read(sock, buffer_in, 1024);
+        cout << buffer_in;
+        string input;
+        getline(cin, input);
+        send(sock, input.c_str(), input.length(), 0);
+    }
+
+    memset(buffer_in, 0, 1024);
+    read(sock, buffer_in, 1024);
+    cout << buffer_in << endl;
+
+    if (string(buffer_in).find("Successful") == string::npos) {
+        close(sock);
+        return -1;
+    }
+
+    string monitor_enable = "/monitor on";
+    send(sock, monitor_enable.c_str(), monitor_enable.length(), 0);
 
     gtk_init(&argc, &argv);
 
@@ -93,7 +175,10 @@ int main(int argc, char *argv[]) {
     gtk_box_pack_start(GTK_BOX(monitor_vbox), thread_label, FALSE, FALSE, 5);
     mutex_label = gtk_label_new("Mutex: [ UNLOCKED ]");
     gtk_box_pack_start(GTK_BOX(monitor_vbox), mutex_label, FALSE, FALSE, 5);
-    gtk_box_pack_start(GTK_BOX(monitor_vbox), gtk_label_new("Semaphore: [ 9/10 Slots ]"), FALSE, FALSE, 5);
+    semaphore_label = gtk_label_new("Semaphore Slots: waiting for server status");
+    gtk_box_pack_start(GTK_BOX(monitor_vbox), semaphore_label, FALSE, FALSE, 5);
+    activity_label = gtk_label_new("Last Event: connected");
+    gtk_box_pack_start(GTK_BOX(monitor_vbox), activity_label, FALSE, FALSE, 5);
 
     pthread_t tid;
     pthread_create(&tid, NULL, receiver, NULL);
