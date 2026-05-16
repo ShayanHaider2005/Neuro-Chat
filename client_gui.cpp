@@ -9,6 +9,7 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <cstring>
+#include <ctime>
 
 using namespace std;
 
@@ -26,6 +27,10 @@ void update_chat(const char* text) {
     gtk_text_buffer_get_end_iter(buffer, &iter);
     gtk_text_buffer_insert(buffer, &iter, text, -1);
     gtk_text_buffer_insert(buffer, &iter, "\n", -1);
+    
+    // Auto-scroll to the end
+    gtk_text_buffer_get_end_iter(buffer, &iter);
+    gtk_text_view_scroll_to_iter(GTK_TEXT_VIEW(chat_buffer_view), &iter, 0.0, FALSE, 0.0, 1.0);
 }
 
 string extract_field(const string &payload, const string &field) {
@@ -42,7 +47,15 @@ string extract_field(const string &payload, const string &field) {
 
 gboolean append_chat_idle(gpointer data) {
     char *text = static_cast<char*>(data);
-    update_chat(text);
+    
+    // Add timestamp to message
+    time_t now = time(nullptr);
+    tm *local_time = localtime(&now);
+    char timestamp[32];
+    strftime(timestamp, sizeof(timestamp), "%H:%M:%S", local_time);
+    
+    string formatted = string("[") + timestamp + "] " + text;
+    update_chat(formatted.c_str());
     g_free(text);
     return G_SOURCE_REMOVE;
 }
@@ -157,6 +170,12 @@ int main(int argc, char *argv[]) {
     GtkWidget *scroll = gtk_scrolled_window_new(NULL, NULL);
     gtk_container_add(GTK_CONTAINER(scroll), chat_buffer_view);
     gtk_box_pack_start(GTK_BOX(chat_vbox), scroll, TRUE, TRUE, 5);
+
+    // Add welcome message
+    update_chat("========================================");
+    update_chat("Welcome to NeuroChat!");
+    update_chat("Commands: /join room, /msg user text, /monitor on|off");
+    update_chat("========================================");
 
     message_entry = gtk_entry_new();
     g_signal_connect(message_entry, "activate", G_CALLBACK(on_send_clicked), NULL);

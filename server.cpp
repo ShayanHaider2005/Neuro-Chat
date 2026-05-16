@@ -1,9 +1,4 @@
-/* * PROJECT: NeuroChat Server
- * TEAM MEMBERS:
- * Badar Ali - 24k-3079 (Lead)
- * Shayan Haider - 24k-5613
- * Aarib - K24-3100
- */
+
 
 #include <iostream>
 #include <vector>
@@ -438,7 +433,15 @@ int main() {
     bind(server_fd, (struct sockaddr *)&address, sizeof(address));
     listen(server_fd, 10);
     for (int i = 0; i < THREAD_POOL_SIZE; i++) pthread_create(&thread_pool[i], NULL, thread_function, NULL);
-    cout << "NeuroChat Server LIVE | Badar Ali | Shayan Haider | Aarib" << endl;
+    
+    cout << "\n========================================" << endl;
+    cout << "[SERVER STARTED]" << endl;
+    cout << "Listening on port 9002" << endl;
+    cout << "Thread pool initialized: " << THREAD_POOL_SIZE << " workers" << endl;
+    cout << "Max concurrent connections: " << MAX_CLIENTS << endl;
+    cout << "Waiting for clients..." << endl;
+    cout << "========================================\n" << endl;
+    
     while (true) {
         sem_wait(&connection_semaphore);
         int addrlen = sizeof(address);
