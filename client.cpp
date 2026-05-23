@@ -36,8 +36,6 @@ int main() {
         cout << "Connection Failed" << endl;
         return -1;
     }
-
-    // Step 1: Choose whether to log in or register.
     memset(buffer, 0, 1024);
     read(sock, buffer, 1024);
     cout << buffer;
@@ -45,7 +43,6 @@ int main() {
     getline(cin, mode);
     send(sock, mode.c_str(), mode.length(), 0);
 
-    // Step 2: Handle Username and Password requests from server
     for(int i = 0; i < 2; i++) {
         memset(buffer, 0, 1024);
         read(sock, buffer, 1024);
@@ -55,7 +52,6 @@ int main() {
         send(sock, input.c_str(), input.length(), 0);
     }
 
-    // Step 3: Check if authentication was successful
     memset(buffer, 0, 1024);
     read(sock, buffer, 1024);
     cout << buffer << endl;
@@ -65,7 +61,6 @@ int main() {
         return 0;
     }
 
-    // Step 4: Start the background thread to listen for incoming messages
     pthread_t recv_thread;
     pthread_create(&recv_thread, NULL, receive_messages, &sock);
 
