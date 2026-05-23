@@ -19,13 +19,13 @@ using namespace std;
 
 #define THREAD_POOL_SIZE 5
 #define MAX_CLIENTS 10
-#define SPAM_DELAY 1 // Seconds allowed between messages
+#define SPAM_DELAY 1 
 pthread_t thread_pool[THREAD_POOL_SIZE];
 struct ClientNode {
     int socket;
     string username;
     string current_room;
-    time_t last_msg_time; // For Spam Protection
+    time_t last_msg_time; 
     bool monitor_enabled;
 };
 
@@ -34,7 +34,6 @@ struct User {
     string password;
 };
 
-// Team Credentials Integrated
 vector<User> database = {
     {"admin", "1234"}, 
     {"badar", "24k3079"}, 
